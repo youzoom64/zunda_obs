@@ -1,12 +1,13 @@
-import asyncio, websockets, json
+import asyncio
+import websockets
+import json
 
-async def test():
-    uri = "ws://localhost:8768"   # 外部制御用ポート
+async def test_speech():
+    uri = "ws://localhost:8768"
     async with websockets.connect(uri) as ws:
         await ws.send(json.dumps({
             "action": "speak",
-            "text": "テスト発話だよ"
+            "text": "新しいテストなのだ"
         }))
 
-asyncio.run(test())
-
+asyncio.run(test_speech())

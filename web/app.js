@@ -3,7 +3,7 @@ console.log("✅ app.js 読み込み開始");
 let app = new PIXI.Application({
   width: 1200,
   height: 800,
-  backgroundColor: 0x333333
+  transparent: true
 });
 document.body.appendChild(app.view);
 
@@ -13,6 +13,9 @@ ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
   handleServerMessage(data);
 };
+
+// グローバルコンテナ
+let zundamonContainer;
 
 // パーツ管理
 let sprites = {
@@ -43,29 +46,42 @@ let mouthTextures = {
 function handleServerMessage(data) {
   switch(data.action) {
     case "blink":
-      console.log("👁️ まばたき実行");
       startBlinkAnimation();
       break;
-    case "speak":
-      console.log("💬 発話:", data.text);
-      startMouthAnimation();
+    case "speech_start":
+      console.log("音声開始:", data.text);
       break;
-    case "monologue":
-      console.log("💭 独り言:", data.text);
-      startMouthAnimation();
+    case "volume_level":
+      updateMouthByVolume(data.level);
       break;
+    case "speech_end":
+      console.log("音声終了");
+      if (sprites.mouth && mouthTextures.closed) {
+        sprites.mouth.texture = mouthTextures.closed;
+      }
+      break;
+  }
+}
+
+function updateMouthByVolume(volume) {
+  if (!sprites.mouth || !mouthTextures.open1) return;
+  
+  if (volume > 0.3) {
+    sprites.mouth.texture = mouthTextures.open2;
+  } else if (volume > 0.1) {
+    sprites.mouth.texture = mouthTextures.open1;
+  } else {
+    sprites.mouth.texture = mouthTextures.closed;
   }
 }
 
 function startBlinkAnimation() {
   if (!sprites.eyeWhite || !sprites.eyeBlack || !eyeTextures.closed) return;
   
-  // 目を閉じる
   sprites.eyeWhite.texture = eyeTextures.closed;
   sprites.eyeBlack.visible = false;
   
   setTimeout(() => {
-    // 目を開く
     if (sprites.eyeWhite && eyeTextures.whiteOpen) {
       sprites.eyeWhite.texture = eyeTextures.whiteOpen;
     }
@@ -75,26 +91,6 @@ function startBlinkAnimation() {
   }, 150);
 }
 
-function startMouthAnimation() {
-  if (!sprites.mouth || !mouthTextures.open1) return;
-  
-  // 口を開く
-  sprites.mouth.texture = mouthTextures.open1;
-  
-  setTimeout(() => {
-    if (sprites.mouth && mouthTextures.open2) {
-      sprites.mouth.texture = mouthTextures.open2;
-    }
-  }, 100);
-  
-  setTimeout(() => {
-    if (sprites.mouth && mouthTextures.closed) {
-      sprites.mouth.texture = mouthTextures.closed;
-    }
-  }, 200);
-}
-
-// 全パーツ読み込み
 app.loader
   .add("body", "/assets/zundamon_en/outfit2/body.png")
   .add("swimsuit", "/assets/zundamon_en/outfit2/swimsuit.png")
@@ -112,6 +108,15 @@ app.loader
   .load((loader, resources) => {
     console.log("✅ 画像ロード完了");
 
+    // コンテナを作成
+    zundamonContainer = new PIXI.Container();
+    app.stage.addChild(zundamonContainer);
+    
+    // 全体のスケールと位置を設定
+    zundamonContainer.scale.set(0.7);
+    zundamonContainer.x = 100;
+    zundamonContainer.y = 0;
+
     // テクスチャを保存
     eyeTextures.whiteOpen = resources.eyeWhiteOpen.texture;
     eyeTextures.blackOpen = resources.eyeBlackOpen.texture;
@@ -126,30 +131,30 @@ app.loader
     createSprite("swimsuit", resources.swimsuit);
     createSprite("clothes", resources.clothes);
     
-    // 目は初期状態で開いた状態
+    // 目
     sprites.eyeWhite = new PIXI.Sprite(eyeTextures.whiteOpen);
     sprites.eyeWhite.x = 0;
     sprites.eyeWhite.y = 0;
-    app.stage.addChild(sprites.eyeWhite);
+    zundamonContainer.addChild(sprites.eyeWhite);
     
     sprites.eyeBlack = new PIXI.Sprite(eyeTextures.blackOpen);
     sprites.eyeBlack.x = 0;
     sprites.eyeBlack.y = 0;
-    app.stage.addChild(sprites.eyeBlack);
+    zundamonContainer.addChild(sprites.eyeBlack);
     
     createSprite("eyebrow", resources.eyebrow);
     
-    // 口は初期状態で閉じた状態
+    // 口
     sprites.mouth = new PIXI.Sprite(mouthTextures.closed);
     sprites.mouth.x = 0;
     sprites.mouth.y = 0;
-    app.stage.addChild(sprites.mouth);
+    zundamonContainer.addChild(sprites.mouth);
     
     createSprite("rightArm", resources.rightArm);
     createSprite("leftArm", resources.leftArm);
     createSprite("edamame", resources.edamame);
 
-    console.log("✅ ずんだもん完全表示（まばたき + 口パク対応）");
+    console.log("✅ ずんだもん完全表示（全体制御対応）");
   });
 
 function createSprite(name, resource) {
@@ -157,9 +162,7 @@ function createSprite(name, resource) {
     sprites[name] = new PIXI.Sprite(resource.texture);
     sprites[name].x = 0;
     sprites[name].y = 0;
-    app.stage.addChild(sprites[name]);
+    zundamonContainer.addChild(sprites[name]);
     console.log(`✅ ${name} パーツ追加完了`);
-  } else {
-    console.error(`❌ ${name} パーツの読み込み失敗`);
   }
 }
