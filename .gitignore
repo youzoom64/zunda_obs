@@ -1,0 +1,46 @@
+# Python venv / キャッシュ
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ログ / 一時ファイル
+*.log
+*.tmp
+*.swp
+
+# Node / Web 系
+node_modules/
+dist/
+build/
+
+# OSごとの不要ファイル
+.DS_Store
+Thumbs.db
+
+# Python仮想環境ツール
+.env
+*.env
+
+# 出力ファイルやキャッシュ
+*.sqlite3
+*.db
+*.pkl
+*.npy
+*.npz
+
+# 録画や音声・動画など大容量メディア（必要に応じて調整）
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+
+# OBSキャプチャやBandicam系フォルダがあるなら
+Bandicam/
+OBS/
+
+# PixiJS / Web系ビルドキャッシュ
+.cache/
+
